@@ -1,0 +1,27 @@
+name: Daily X Digest
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 1 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install -g playwright && npx playwright install chromium --with-deps
+      - name: Fetch & Build
+        run: node fetch-and-build.js
+        continue-on-error: true
+      - name: Deploy
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add -A
+          git diff --staged --quiet || git commit -m "update $(date +%Y-%m-%d)"
+          git push origin HEAD:main --force
